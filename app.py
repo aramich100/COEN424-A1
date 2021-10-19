@@ -5,6 +5,6 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Noaman is a huge ratz'
+    return 'Mike and Constantines Cloud Computing Attempt with Heroku'
 
 
