@@ -8,4 +8,3 @@ def index():
     return 'Noaman is a huge ratz'
 
 
-app.run(host='0.0.0.0', port=5000, debug=True)
