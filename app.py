@@ -5,7 +5,7 @@ app = Flask(__name__)
 # DEFAULT
 @app.route('/', methods=['GET'])
 def index():
-    return 'Mike and Constantines Cloud Computing Attempt with Heroku'
+    return 'Michael Arabian - 40095854\nConstantine Karellas - 40109253\nCOEN 424 Assignment 1 with Heroku'
 
 # Returns what is requested based using JSON
 @app.route('/api/v1/json/batches', methods=['GET'])
