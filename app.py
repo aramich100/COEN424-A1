@@ -47,32 +47,7 @@ def get_data():
 # Returns what is requested using a Protocol Buffer
 @app.route('/api/v1/protobuf/batches', methods=['GET'])
 def get_protobuf():
-    # Parse data to variables to make the code more clear
-    request_protobuf_RFW = request_pb2.RFW()
-    request_protobuf_RFW.ParseFromString(request.data)
-    print(request_protobuf_RFW)
-    response = get_response(
-                    rfw_id=request_protobuf_RFW.rfw_id,
-                    workload_metric=request_protobuf_RFW.workload_metric,
-                    benchmark_type=request_protobuf_RFW.benchmark_type.lower(),
-                    batch_unit=request_protobuf_RFW.batch_unit,
-                    batch_id=request_protobuf_RFW.batch_id,
-                    batch_size=request_protobuf_RFW.batch_size)
-    if "reason" in response:
-        return get_HTTP(
-                data=json.dumps(response), status=400)
-
-    response_protobuf_RFD = response_pb2.RFD()
-    response_protobuf_RFD.rfw_id = response.get('rfw_id')
-    response_protobuf_RFD.last_batch_id = response.get('last_batch_id')
-    response_protobuf_RFD.samples.extend(response.get('samples'))
-
-    print(response_protobuf_RFD)
-    return make_response(response_protobuf_RFD.SerializeToString(),
-                         200,
-                         {
-                            'Content-Type': 'application/octet-stream'
-                        })
+    return "hello"
 
 
 
