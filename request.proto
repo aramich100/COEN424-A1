@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+message RFW{
+    required string rfw_id = 1;
+    required string benchmark_type = 2;
+    required string workload_metric = 3;
+    required int32 batch_unit = 4;
+    required int32 batch_id = 5;
+    required int32 batch_size = 6;
+}

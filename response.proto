@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+message RFD{
+    required string rfw_id = 1;
+    required int32 last_batch_id = 2;
+    repeated string samples = 3;
+}
