@@ -1,9 +1,7 @@
-from io import StringIO
 from flask import Flask, request, make_response
-from protobuf import request_pb2, response_pb2
+import request_pb2, response_pb2
 import json
 import csv
-import string
 
 app = Flask(__name__)
 
