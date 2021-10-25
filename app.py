@@ -5,14 +5,15 @@ import csv
 
 app = Flask(__name__)
 
-fileLocation = {
-    "DVDTesting" : "./DVD-testing.csv",
-    "DVDTraining" : "./DVD-training.csv",
-    "BenchTesting" : "./NDBench-testing.csv",
-    "BenchTraining" : "./NDBench-testing.csv",
+
+file_locations = {
+    "dvd-testing": "files/DVD-testing.csv",
+    "dvd-training": "files/DVD-training.csv",
+    "ndbench-testing": "files/NDBench-testing.csv",
+    "ndbench-training": "files/NDBench-training.csv"
 }
 
-workloadData = {
+valid_workload_metric = {
     "CPUUtilization_Average": 0,
     "NetworkIn_Average": 1,
     "NetworkOut_Average": 2,
@@ -20,17 +21,19 @@ workloadData = {
     "Final_Target": 4,
 }
 
-# DEFAULT
-@app.route('/', methods=['GET'])
-def index():
-    return 'Michael Arabian - 40095854\nConstantine Karellas - 40109253\nCOEN 424 Assignment 1 with Heroku'
 
-# Returns what is requested based using JSON
+# Default route
+@app.route('/', methods=['GET'])
+def default():
+    return "Michael Arabian - 40095854 and Constantine Karellas - 40109253 -------- COEN 424 Assignment 1 with Heroku"
+
+
+# This endpoint returns what is requested using json
 @app.route('/api/v1/json/batches', methods=['GET'])
 def get_data():
     # Parse data to variables to make the code more clear
     content = request.get_json()
-    response = get_response(
+    response = create_respoonse_data(
                     rfw_id=content.get("rfw_id"),
                     workload_metric=content.get("workload_metric"),
                     benchmark_type=content.get("benchmark_type").lower(),
@@ -38,20 +41,20 @@ def get_data():
                     batch_id=content.get("batch_id"),
                     batch_size=content.get("batch_size"))
     if "reason" in response:
-        return get_HTTP(
+        return json_response(
                 data=json.dumps(response), status=400)
     # Return response
-    return get_HTTP(json.dumps(response))
+    return json_response(json.dumps(response))
 
 
-# Returns what is requested using a Protocol Buffer
+# This endpoint retruns what is requested using protocal buffer
 @app.route('/api/v1/protobuf/batches', methods=['GET'])
-def get_protobuf():
+def get_data_protobuf():
     # Parse data to variables to make the code more clear
     request_protobuf_RFW = request_pb2.RFW()
     request_protobuf_RFW.ParseFromString(request.data)
     print(request_protobuf_RFW)
-    response = get_response(
+    response = create_respoonse_data(
                     rfw_id=request_protobuf_RFW.rfw_id,
                     workload_metric=request_protobuf_RFW.workload_metric,
                     benchmark_type=request_protobuf_RFW.benchmark_type.lower(),
@@ -59,7 +62,7 @@ def get_protobuf():
                     batch_id=request_protobuf_RFW.batch_id,
                     batch_size=request_protobuf_RFW.batch_size)
     if "reason" in response:
-        return get_HTTP(
+        return json_response(
                 data=json.dumps(response), status=400)
 
     response_protobuf_RFD = response_pb2.RFD()
@@ -75,26 +78,30 @@ def get_protobuf():
                         })
 
 
-
-# Returns data from file as dictionary
-def get_response(rfw_id, workload_metric, benchmark_type, batch_unit, batch_id, batch_size):
+# This function gets the data from the file and returns a dictionary
+def create_respoonse_data(rfw_id,
+                          workload_metric,
+                          benchmark_type,
+                          batch_unit,
+                          batch_id,
+                          batch_size):
     # A little bit of input validation
     if (batch_unit <= 0):
         return {"reason": "batch_unit must be > 0"}
     if (batch_size < 0):
         return {"reason": "batch_size must be positive"}
-    if (workload_metric not in workload_metric):
+    if (workload_metric not in valid_workload_metric):
         return {"reason": "invalid workload_metric"}
     # Get corresponding workload metric
-    workload_metric = workload_metric.get(workload_metric)
+    workload_metric = valid_workload_metric.get(workload_metric)
     # Get the correct file
-    file_location = fileLocation.get(benchmark_type)
+    file_location = file_locations.get(benchmark_type)
     # Find the size of the CSV
     size = get_size(file_location=file_location)
     # A little bit more validation
     number_of_batches = size/batch_unit
     if (batch_id > number_of_batches):
-        return get_HTTP(
+        return json_response(
                 data=json.dumps({"reason": "batch_id > number of batches"}),
                 status=400)
     # Determine start and end of the samples to return
@@ -117,7 +124,8 @@ def get_response(rfw_id, workload_metric, benchmark_type, batch_unit, batch_id, 
     }
 
 
-# Returns full size of CSV File
+# This function gets the full size of the .csv file
+# No other simpler alternatives were found
 def get_size(file_location):
     size = 0
     with open(file_location, newline='') as f:
@@ -127,13 +135,14 @@ def get_size(file_location):
     return size
 
 
-# Returns HTTP response from JSON
-def get_HTTP(data='', status=200, headers=None):
+# This function simply takes as json and returns a http response
+def json_response(data='', status=200, headers=None):
     headers = headers or {}
     if 'Content-Type' not in headers:
         headers['Content-Type'] = 'application/json'
     res = make_response(data, status, headers)
     return res
+
 
 if __name__ == '__main__':
     app.run()
