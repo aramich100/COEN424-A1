@@ -6,10 +6,10 @@ import csv
 app = Flask(__name__)
 
 fileLocation = {
-    "DVDTesting" : "files/DVD-testing.csv",
-    "DVDTraining" : "files/DVD-training.csv",
-    "BenchTesting" : "files/NDBench-testing.csv",
-    "BenchTraining" : "files/NDBench-testing.csv",
+    "DVDTesting" : "./DVD-testing.csv",
+    "DVDTraining" : "./DVD-training.csv",
+    "BenchTesting" : "./NDBench-testing.csv",
+    "BenchTraining" : "./NDBench-testing.csv",
 }
 
 workloadData = {
