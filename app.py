@@ -1,15 +1,16 @@
 from flask import Flask, request, make_response
-import request_pb2, response_pb2
+import request_pb2
+import response_pb2
 import json
 import csv
 
 app = Flask(__name__)
 
 fileLocation = {
-    "DVDTesting" : "./DVD-testing.csv",
-    "DVDTraining" : "./DVD-training.csv",
-    "BenchTesting" : "./NDBench-testing.csv",
-    "BenchTraining" : "./NDBench-testing.csv",
+    "DVDTesting": "./DVD-testing.csv",
+    "DVDTraining": "./DVD-training.csv",
+    "BenchTesting": "./NDBench-testing.csv",
+    "BenchTraining": "./NDBench-testing.csv",
 }
 
 workloadData = {
@@ -21,25 +22,29 @@ workloadData = {
 }
 
 # DEFAULT
+
+
 @app.route('/', methods=['GET'])
 def index():
     return 'Michael Arabian - 40095854\nConstantine Karellas - 40109253\nCOEN 424 Assignment 1 with Heroku'
 
 # Returns what is requested based using JSON
+
+
 @app.route('/api/v1/json/batches', methods=['GET'])
 def get_data():
     # Parse data to variables to make the code more clear
     content = request.get_json()
     response = get_response(
-                    rfw_id=content.get("rfw_id"),
-                    workload_metric=content.get("workload_metric"),
-                    benchmark_type=content.get("benchmark_type").lower(),
-                    batch_unit=content.get("batch_unit", 0),
-                    batch_id=content.get("batch_id"),
-                    batch_size=content.get("batch_size"))
+        rfw_id=content.get("rfw_id"),
+        workload_metric=content.get("workload_metric"),
+        benchmark_type=content.get("benchmark_type").lower(),
+        batch_unit=content.get("batch_unit", 0),
+        batch_id=content.get("batch_id"),
+        batch_size=content.get("batch_size"))
     if "reason" in response:
         return get_HTTP(
-                data=json.dumps(response), status=400)
+            data=json.dumps(response), status=400)
     # Return response
     return get_HTTP(json.dumps(response))
 
@@ -52,15 +57,15 @@ def get_protobuf():
     request_protobuf_RFW.ParseFromString(request.data)
     print(request_protobuf_RFW)
     response = get_response(
-                    rfw_id=request_protobuf_RFW.rfw_id,
-                    workload_metric=request_protobuf_RFW.workload_metric,
-                    benchmark_type=request_protobuf_RFW.benchmark_type.lower(),
-                    batch_unit=request_protobuf_RFW.batch_unit,
-                    batch_id=request_protobuf_RFW.batch_id,
-                    batch_size=request_protobuf_RFW.batch_size)
+        rfw_id=request_protobuf_RFW.rfw_id,
+        workload_metric=request_protobuf_RFW.workload_metric,
+        benchmark_type=request_protobuf_RFW.benchmark_type.lower(),
+        batch_unit=request_protobuf_RFW.batch_unit,
+        batch_id=request_protobuf_RFW.batch_id,
+        batch_size=request_protobuf_RFW.batch_size)
     if "reason" in response:
         return get_HTTP(
-                data=json.dumps(response), status=400)
+            data=json.dumps(response), status=400)
 
     response_protobuf_RFD = response_pb2.RFD()
     response_protobuf_RFD.rfw_id = response.get('rfw_id')
@@ -71,9 +76,8 @@ def get_protobuf():
     return make_response(response_protobuf_RFD.SerializeToString(),
                          200,
                          {
-                            'Content-Type': 'application/octet-stream'
-                        })
-
+        'Content-Type': 'application/octet-stream'
+    })
 
 
 # Returns data from file as dictionary
@@ -86,7 +90,7 @@ def get_response(rfw_id, workload_metric, benchmark_type, batch_unit, batch_id, 
     if (workload_metric not in workload_metric):
         return {"reason": "invalid workload_metric"}
     # Get corresponding workload metric
-    workload_metric = workload_metric.get(workload_metric)
+    workload_metric = workloadData.get(workload_metric)
     # Get the correct file
     file_location = fileLocation.get(benchmark_type)
     # Find the size of the CSV
@@ -95,8 +99,8 @@ def get_response(rfw_id, workload_metric, benchmark_type, batch_unit, batch_id, 
     number_of_batches = size/batch_unit
     if (batch_id > number_of_batches):
         return get_HTTP(
-                data=json.dumps({"reason": "batch_id > number of batches"}),
-                status=400)
+            data=json.dumps({"reason": "batch_id > number of batches"}),
+            status=400)
     # Determine start and end of the samples to return
     start_return_sample = batch_id*batch_unit
     end_return_sample = start_return_sample + batch_size*batch_unit
@@ -111,9 +115,9 @@ def get_response(rfw_id, workload_metric, benchmark_type, batch_unit, batch_id, 
                 samples.append(row[workload_metric])
     # Build the dict object that will be returned as a JSON
     return {
-            "rfw_id": rfw_id,
-            "last_batch_id": int(end_return_sample/batch_unit),
-            "samples": samples
+        "rfw_id": rfw_id,
+        "last_batch_id": int(end_return_sample/batch_unit),
+        "samples": samples
     }
 
 
@@ -135,6 +139,6 @@ def get_HTTP(data='', status=200, headers=None):
     res = make_response(data, status, headers)
     return res
 
+
 if __name__ == '__main__':
     app.run()
-
