@@ -1,4 +1,10 @@
+#COEN424 Assignment 1
+#Constantine Karellas - 40109253
+#Michael Arabian - 40095854
+
 from flask import Flask, request, make_response
+from requests.api import get
+from werkzeug.wrappers import response
 import request_pb2
 import response_pb2
 import json
@@ -24,120 +30,100 @@ data_columns = {
 def default():
     return "Michael Arabian - 40095854 and Constantine Karellas - 40109253 -------- COEN 424 Assignment 1 with Heroku"
 
-
-#this endpoint returns what is requested using json
+#returns what is requested using json
 @app.route('/api/v1/json/batches', methods=['GET'])
 def getJSON():
-    # Parse data to variables to make the code more clear
+    #parsing the requested data to json
     data = request.get_json()
-    response = response_data_to_dictionnary(
-                    rfw_id = data.get("rfw_id"),
-                    workload_metric = data.get("workload_metric"),
-                    benchmark_type = data.get("benchmark_type").lower(),
-                    batch_unit = data.get("batch_unit", 0),
-                    batch_id = data.get("batch_id"),
-                    batch_size = data.get("batch_size"))
+    #generating response from the generated dictionary
+    response = getDict(rfwID = data.get("rfw_id"), workloadMetric = data.get("workload_metric"),
+                       benchmarkType = data.get("benchmark_type").lower(), batchUnit = data.get("batch_unit", 0),
+                       batchID = data.get("batch_id"), batchSize = data.get("batch_size"))
     if "reason" in response:
-        return json_response(
+        return getHTTP(
                 data=json.dumps(response), status=400)
-    # Return response
-    return json_response(json.dumps(response))
+    #returns the http response
+    return getHTTP(json.dumps(response))
 
-# This endpoint retruns what is requested using protocal buffer
+#Routing for ProtoBuf Request
 @app.route('/api/v1/protobuf/batches', methods=['GET'])
-def get_data_protobuf():
-    # Parse data to variables to make the code more clear
-    request_protobuf_RFW = request_pb2.RFW()
-    request_protobuf_RFW.ParseFromString(request.data)
-    print(request_protobuf_RFW)
-    response = response_data_to_dictionnary(
-                    rfw_id=request_protobuf_RFW.rfw_id,
-                    workload_metric=request_protobuf_RFW.workload_metric,
-                    benchmark_type=request_protobuf_RFW.benchmark_type.lower(),
-                    batch_unit=request_protobuf_RFW.batch_unit,
-                    batch_id=request_protobuf_RFW.batch_id,
-                    batch_size=request_protobuf_RFW.batch_size)
+def getProtobuf():
+    #parsing CSV files
+    requProtoRFW = request_pb2.RFW()
+    requProtoRFW.ParseFromString(request.data)
+    print(requProtoRFW)
+    #generating response from the generated dictionary
+    response = getDict(rfwID = requProtoRFW.rfw_id, workloadMetric = requProtoRFW.workload_metric,
+                       benchmarkType = requProtoRFW.benchmark_type.lower(), batchUnit = requProtoRFW.batch_unit,
+                       batchID = requProtoRFW.batch_id, batchSize = requProtoRFW.batch_size)
     if "reason" in response:
-        return json_response(
-                data=json.dumps(response), status=400)
+        return getHTTP(data = json.dumps(response), status=400)
 
-    response_protobuf_RFD = response_pb2.RFD()
-    response_protobuf_RFD.rfw_id = response.get('rfw_id')
-    response_protobuf_RFD.last_batch_id = response.get('last_batch_id')
-    response_protobuf_RFD.samples.extend(response.get('samples'))
+    respProtoRFD = response_pb2.RFD()
+    respProtoRFD.rfw_id = response.get('rfw_id')
+    respProtoRFD.last_batch_id = response.get('last_batch_id')
+    respProtoRFD.samples.extend(response.get('samples'))
 
-    print(response_protobuf_RFD)
-    return make_response(response_protobuf_RFD.SerializeToString(),
-                         200,
-                         {
+    print(respProtoRFD)
+    return make_response(respProtoRFD.SerializeToString(), 200,
+    {
         'Content-Type': 'application/octet-stream'
     })
 
-# This function gets the data from the file and returns a dictionary
-def response_data_to_dictionnary(rfw_id,
-                          workload_metric,
-                          benchmark_type,
-                          batch_unit,
-                          batch_id,
-                          batch_size):
-    # A little bit of input validation
-    if (batch_unit <= 0):
-        return {"reason": "batch_unit must be > 0"}
-    if (batch_size < 0):
-        return {"reason": "batch_size must be positive"}
-    if (workload_metric not in data_columns):
-        return {"reason": "invalid workload_metric"}
-    # Get corresponding workload metric
+#gets the data from the files and returns a dictionary
+def getDict(rfwID, workloadMetric, benchmarkType, batchUnit, batchID, batchSize):
 
-    workload_metric = data_columns.get(workload_metric)
-    # Get the correct file
-    file_location = file_locations.get(benchmark_type)
-    # Find the size of the CSV
-    size = get_size(file_location=file_location)
-    # A little bit more validation
-    number_of_batches = size/batch_unit
-    if (batch_id > number_of_batches):
+    workload_metric = data_columns.get(workloadMetric)
+    fileDest = file_locations.get(benchmarkType)
+    size = getSizeCSV(file_location=fileDest)
+    number_of_batches = size/batchUnit
 
-        return json_response(
-                data=json.dumps({"reason": "batch_id > number of batches"}),
+    #validation if ID is bigger than number of batches
+    if (batchID > number_of_batches):
+        #returns http response
+        return getHTTP(
+                data=json.dumps({"Improper Input": " The batchID must be smaller than the number of batches"}),
                 status=400)
-    # Determine start and end of the samples to return
-    start_return_sample = batch_id*batch_unit
-    end_return_sample = start_return_sample + batch_size*batch_unit
-    if (end_return_sample > size):
+
+    #see when samples start and end
+    startSample = batchID * batchUnit
+    endSample = startSample + batchSize * batchUnit
+    if (endSample > size):
         end_return_sample = size
-    # Get the samples to return
+
+    #compute the number of samples
     samples = []
-    with open(file_location, newline='') as f:
+    with open(fileDest, newline='') as f:
         reader = csv.reader(f)
-        for line, row in enumerate(reader):
-            if (line >= start_return_sample and line < end_return_sample):
+        for i, row in enumerate(reader):
+            if (i >= startSample and i < end_return_sample):
                 samples.append(row[workload_metric])
     # Build the dict object that will be returned as a JSON
     return {
-        "rfw_id": rfw_id,
-        "last_batch_id": int(end_return_sample/batch_unit),
-        "samples": samples
+        "rfwID": rfwID, "lastBatchID": int(end_return_sample / batchUnit), "Samples": samples
     }
 
-# This function gets the full size of the .csv file
-# No other simpler alternatives were found
-def get_size(file_location):
+#returns the size of the CSV files
+def getSizeCSV(file_loc):
+    #initializing size to 0
     size = 0
-    with open(file_location, newline='') as f:
+    #reads the csv files in the files folder
+    with open(file_loc, newline='') as f:
         reader = csv.reader(f)
         for row in reader:
             size += 1
     return size
 
 #this function simply takes as json and returns a http response
-def json_response(data='', status=200, headers=None):
-    headers = headers or {}
-    if 'Content-Type' not in headers:
-        headers['Content-Type'] = 'application/json'
-    res = make_response(data, status, headers)
-    return res
-
+def getHTTP(d='', stat=200, head=None):
+    #initializing head (headers) to an empty list
+    head = head or {}
+    if 'Content-Type' not in head:
+        head['Content-Type'] = 'application/json'
+    #making response with parameters
+    resp = make_response(d, stat, head)
+    #returning response for the json format
+    return resp
 
 if __name__ == '__main__':
     app.run()
