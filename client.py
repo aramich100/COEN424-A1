@@ -23,9 +23,9 @@ def genRandom():
 #requesting json from the server
 def reqJSON(benchmarkType, workloadMetric, batchUnit, batchID, batchSize):
     #creating a json object with our variables
-    jsonObject= {"rfwID": genRandom(), "benchmarkType": benchmarkType,
-                 "workloadMetric": workloadMetric, "batchUnit": int(batchUnit),
-                 "batchID": int(batchID), "batchSize": int(batchSize)}
+    jsonObject= {"rfw_id": genRandom(), "benchmark_type": benchmarkType,
+                 "workload_metric": workloadMetric, "batch_unit": int(batchUnit),
+                 "batch_id": int(batchID), "batch_size": int(batchSize)}
 
     #making a response to the server
     response = requests.get(JSONURL, json=jsonObject)
@@ -35,10 +35,10 @@ def reqJSON(benchmarkType, workloadMetric, batchUnit, batchID, batchSize):
 
     #displaying the json response 
     jsonResp = response.json()
-    if jsonResp.get('rfwID'):
-        print('Request ID: '+str(jsonResp.get('rfwID')))
-        print('Last batch ID: '+str(jsonResp.get('lastBatchID')))
-        print('Samples: '+str(jsonResp.get('Samples')))
+    if jsonResp.get('rfw_id'):
+        print('Request ID: '+str(jsonResp.get('rfw_id')))
+        print('Last batch ID: '+str(jsonResp.get('last_batch_id')))
+        print('Samples: '+str(jsonResp.get('samples')))
     else:
         print(jsonResp)
 
