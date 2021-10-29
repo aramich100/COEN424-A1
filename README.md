@@ -1,3 +1,4 @@
+*****
 COEN 424
 
 
@@ -5,11 +6,15 @@ Assignment 1
 
 
 Due Date : October 30, 2021
-
+*****
 
 
 Contributors:
+
+
 Michael Arabian - 40095854
+
+
 Constantine Karellas - 40109253
 
 
